@@ -10,6 +10,7 @@ import           Control.Monad.IO.Class               (MonadIO, liftIO)
 import           Data.Aeson                           (FromJSON, ToJSON, Value)
 import           Data.Function                        ((&))
 import           Data.Maybe                           as Maybe
+import           Flow
 import           GHC.Generics
 import           Network.HTTP.Req
 import           Network.Wai.Middleware.RequestLogger as RequestLogger
@@ -22,7 +23,7 @@ import           WagonCount
 
 wagonCountsRequest :: IO [WagonCount]
 wagonCountsRequest =
-  runReq defaultHttpConfig $ do
+  runReq defaultHttpConfig <| do
     response <-
       req
         GET
@@ -39,7 +40,8 @@ compositionToWagonCount :: Composition -> WagonCount
 compositionToWagonCount composition =
   WagonCount
     { trainNumber = Composition.trainNumber composition
-    , wagonCount = journeySections composition & map (length . wagons) & minimum
+    , wagonCount =
+        journeySections composition |> map (wagons .> length) |> minimum
     }
 
 wagonCountsAction :: (ScottyError e, MonadIO m) => ActionT e m ()
@@ -48,18 +50,18 @@ wagonCountsAction = liftAndCatchIO wagonCountsRequest >>= json
 main :: IO ()
 main = do
   putStrLn "Starting server..."
-  scottyT 3000 id $ do
+  scottyT 3000 id <| do
     middleware RequestLogger.logStdoutDev
     defaultHandler handleEx
     router
 
 router = do
-  get "/" $ text "OK"
-  get "/wagon-counts" $ wagonCountsAction
-  get "/users" $ json allUsers
-  get "/users/:id" $ do
+  get "/" <| text "OK"
+  get "/wagon-counts" <| wagonCountsAction
+  get "/users" <| json allUsers
+  get "/users/:id" <| do
     id <- param "id"
     case filter (\u -> userId u == id) allUsers of
       user:a -> json user
-      a      -> raise $ NotFound $ "No user with id " ++ show id
-  notFound $ raise $ NotFound "Unknown route"
+      a      -> raise (NotFound ("No user with id " ++ show id))
+  notFound <| raise (NotFound "Unknown route")
