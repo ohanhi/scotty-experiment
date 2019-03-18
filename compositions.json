@@ -1,0 +1,37 @@
+{
+  "trainNumber": 8040,
+  "departureDate": "2019-03-15",
+  "operatorUICCode": 10,
+  "operatorShortCode": "vr",
+  "trainCategory": "Commuter",
+  "trainType": "HL",
+  "version": 251453047723,
+  "journeySections": [
+    {
+      "beginTimeTableRow": {
+        "stationShortCode": "LPV",
+        "stationUICCode": 68,
+        "countryCode": "FI",
+        "type": "DEPARTURE",
+        "scheduledTime": "2019-03-15T05:57:00.000Z"
+      },
+      "endTimeTableRow": {
+        "stationShortCode": "HKI",
+        "stationUICCode": 1,
+        "countryCode": "FI",
+        "type": "ARRIVAL",
+        "scheduledTime": "2019-03-15T06:14:00.000Z"
+      },
+      "locomotives": [
+        { "location": 1, "locomotiveType": "Sm5", "powerType": "Electric" },
+        { "location": 2, "locomotiveType": "Sm5", "powerType": "Electric" }
+      ],
+      "wagons": [
+        { "wagonType": "Sm5", "location": 1, "salesNumber": 0, "length": 7520 },
+        { "wagonType": "Sm5", "location": 2, "salesNumber": 0, "length": 7520 }
+      ],
+      "totalLength": 150,
+      "maximumSpeed": 120
+    }
+  ]
+}
