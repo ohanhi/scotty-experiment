@@ -7,6 +7,7 @@ import           GHC.Generics
 
 data Composition = Composition
   { trainNumber     :: Int
+  , departureDate   :: String
   , journeySections :: [JourneySection]
   } deriving (Show, Generic)
 
