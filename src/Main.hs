@@ -8,8 +8,6 @@ module Main where
 
 import           Control.Monad.IO.Class               (MonadIO, liftIO)
 import           Data.Aeson                           (FromJSON, ToJSON, Value)
-import           Data.Function                        ((&))
-import           Data.Maybe                           as Maybe
 import qualified Data.Text                            as Text
 import qualified Data.Time
 import qualified Data.Time.Format                     as TF
@@ -17,6 +15,7 @@ import           Flow
 import           GHC.Generics
 import           Network.HTTP.Req
 import           Network.Wai.Middleware.RequestLogger as RequestLogger
+import qualified System.Environment                   as Env
 import           Web.Scotty.Trans
 
 import           Composition
@@ -63,7 +62,8 @@ wagonCountsAction = liftAndCatchIO wagonCountsRequest >>= json
 main :: IO ()
 main = do
   putStrLn "Starting server..."
-  scottyT 3000 id <| do
+  port <- Env.lookupEnv "PORT" |> fmap (maybe 3000 read)
+  scottyT port id <| do
     middleware RequestLogger.logStdoutDev
     defaultHandler handleEx
     router
