@@ -33,16 +33,14 @@ resolver: lts-13.13
 #  - auto-update
 #  - wai
 packages:
-- .
+  - .
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
-extra-deps: [
-  "hindent-5.2.7@sha256:35a1883948d2a2d9b663630d0e5c33fcb303149ac0b1f42a59f5e8fbc88b31e5",
-  "req-2.0.1@sha256:a677b3cb7534e101d2af86e6d12ae94cec57067314763fd2c89a6bc51a6d2fab",
-  "retry-0.8.0.0@sha256:319a0586876d43622bfe9406fad067adf0b4e591d125ad960bcc405237cc28f5"
-]
-
+extra-deps:
+  - hindent-5.2.7@sha256:35a1883948d2a2d9b663630d0e5c33fcb303149ac0b1f42a59f5e8fbc88b31e5
+  - req-2.0.1@sha256:a677b3cb7534e101d2af86e6d12ae94cec57067314763fd2c89a6bc51a6d2fab
+  - retry-0.8.0.0@sha256:319a0586876d43622bfe9406fad067adf0b4e591d125ad960bcc405237cc28f5
 # Override default flag values for local packages and extra-deps
 # flags: {}
 
