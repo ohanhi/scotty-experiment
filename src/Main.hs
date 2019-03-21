@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DuplicateRecordFields      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -14,7 +15,7 @@ import qualified Data.Time.Format                     as TF
 import           Flow
 import           GHC.Generics
 import           Network.HTTP.Req
-import           Network.Wai.Middleware.RequestLogger as RequestLogger
+import qualified Network.Wai.Middleware.RequestLogger as RequestLogger
 import qualified System.Environment                   as Env
 import           Web.Scotty.Trans
 
@@ -23,51 +24,15 @@ import           ErrorHandling
 import           User
 import           WagonCount
 
-wagonCountsRequest :: IO WagonCountsResponse
-wagonCountsRequest =
-  let format = TF.formatTime TF.defaultTimeLocale "%F" .> Text.pack
-   in runReq defaultHttpConfig <| do
-        response <-
-          liftIO Data.Time.getCurrentTime >>= return . format >>=
-          return .
-          (https "rata.digitraffic.fi" /: "api" /: "v1" /: "compositions" /:) >>=
-          (\url ->
-             req
-               GET
-               url
-               NoReqBody
-               jsonResponse -- specify how to interpret response
-               mempty -- query params, headers, explicit port number, etc.
-           )
-        let body :: [Composition] = responseBody response
-            wagonCounts = map compositionToWagonCount body
-         in case body of
-              first:rest ->
-                return <|
-                WagonCountsResponse
-                  {date = departureDate first, wagonCounts = wagonCounts}
-              _ -> fail "Malformed response"
-
-compositionToWagonCount :: Composition -> WagonCount
-compositionToWagonCount composition =
-  WagonCount
-    { trainNumber = Composition.trainNumber composition
-    , wagonCount =
-        journeySections composition |> map (wagons .> length) |> minimum
-    }
-
-wagonCountsAction :: (ScottyError e, MonadIO m) => ActionT e m ()
-wagonCountsAction = liftAndCatchIO wagonCountsRequest >>= json
-
 main :: IO ()
 main = do
-  putStrLn "Starting server..."
   port <- Env.lookupEnv "PORT" |> fmap (maybe 3000 read)
   scottyT port id <| do
     middleware RequestLogger.logStdoutDev
     defaultHandler handleEx
     router
 
+router :: ScottyT Except IO ()
 router = do
   get "/" <| text "OK"
   get "/wagon-counts" <| wagonCountsAction
@@ -78,3 +43,37 @@ router = do
       user:a -> json user
       a      -> raise (NotFound ("No user with id " ++ show id))
   notFound <| raise (NotFound "Unknown route")
+
+--- WAGON COUNTS
+wagonCountsAction :: (ScottyError e, MonadIO m) => ActionT e m ()
+wagonCountsAction = liftAndCatchIO wagonCountsRequest >>= json
+
+wagonCountsRequest :: IO WagonCountsResponse
+wagonCountsRequest =
+  runReq defaultHttpConfig <| do
+    time <- liftIO Data.Time.getCurrentTime
+    let url = compositionsUrl time
+    response <- req GET url NoReqBody jsonResponse mempty
+    let body :: [Composition] = responseBody response
+    let wagonCounts = map compositionToWagonCount body
+    case body of
+      first:rest ->
+        return <|
+        WagonCountsResponse
+          {date = departureDate first, wagonCounts = wagonCounts}
+      _ -> fail "Malformed response"
+
+compositionsUrl :: Data.Time.UTCTime -> Url 'Https
+compositionsUrl time =
+  time |> TF.formatTime TF.defaultTimeLocale "%F" |> Text.pack |>
+  (https "rata.digitraffic.fi" /: "api" /: "v1" /: "compositions" /:)
+
+compositionToWagonCount :: Composition -> WagonCount
+compositionToWagonCount composition =
+  WagonCount
+    { trainNumber = Composition.trainNumber composition
+    , wagonCount =
+        journeySections composition |> map (wagons .> length) |> minimum
+    }
+-- TRAINS
+-- TODO
